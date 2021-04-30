@@ -43,6 +43,7 @@ deployDoc <- function(username, document, ... ){
   on.exit(unlink(appDir, recursive=TRUE))
   file.copy(document, appDir) 
   
+  name <- list(...)$name
   name <- if(!is.null(name)) name else gsub(".R", "", document)
   
   deployDir(username,
