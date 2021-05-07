@@ -37,7 +37,7 @@ installAppLock <- function(zipFile){
   if(!file.exists("renv.lock")){
     stop("***: Lockfile 'renv.lock' does not exist. Need the lockfile to deplpy dependence packages!")
   }
-  browser()
+  
   tryCatch(renv::restore(lockfile = "renv.lock", prompt = FALSE),
     error=function(e){ print(e) } )
   

@@ -27,35 +27,45 @@ deployApp <- function(username,
               version = version, 
               name = name, 
               description=description, 
-              os=os)
+              os=os,
+              script = getOption("runShiny"))
   }
   
 }
 
 
-deployDoc <- function(username, document, ... ){
+deployDoc <- function(username, 
+                      document, 
+                      version = NULL,
+                      name = NULL,
+                      description = NULL,
+                      os   = NULL){
   
   oldWD <- getwd()
   on.exit(setwd(oldWD), add = TRUE)
   setwd(dirname(document)) 
+ 
+  #appdir <- tempdir()
+  appdir <- "test_deploy"
+  dir.create(appdir)
+  on.exit(unlink(appdir, recursive=TRUE))
+  file.copy(document, appdir) 
   
-  appDir <- tempdir()
-  on.exit(unlink(appDir, recursive=TRUE))
-  file.copy(document, appDir) 
-  
-  name <- list(...)$name
-  name <- if(!is.null(name)) name else gsub(".R", "", document)
+  name <- if(!is.null(name)) name else gsub(".R", "", basename(document))
   
   deployDir(username,
-            project = appDir,
-            name = name,
-            script = document, ...) 
+            appdir,
+            version = version, 
+            name = name, 
+            description=description, 
+            os=os,
+            script = document) 
   
 }
 
 
 deployDir <- function(username,
-                      project,
+                      appdir,
                       version = NULL,
                       name = NULL,
                       description = NULL,
@@ -63,9 +73,9 @@ deployDir <- function(username,
                       script = getOption("runShiny")){
   
   # normalize project path and ensure it contains files
-  project <- normalizePath(project, mustWork = FALSE)
-  if (!file.exists(project)) {
-    stop(project, "contains no files")
+  project <- normalizePath(appdir, mustWork = FALSE)
+  if (!file.exists(appdir)) {
+    stop(appdir, "contains no files")
   }   
   
   # get the path to the config file
@@ -91,22 +101,22 @@ deployDir <- function(username,
   }
   
   # zip up the project 
-  appZipFile <- zipAppDeploy(project)
-  on.exit(unlink(appZipFile))
+  appFile <- lockAppDeploy(appdir)
+  on.exit(unlink(appFile))
   
   # get app information
   appInfo    <- infoAppDeploy(project, script, name, description, version, os)
   
   # upload app .tar file
   headers   <- list('Cookie'=configAuthInfo$session)
-  uploadRequest  <- client$uploadApp(appInfo, appZipFile, headers)
+  uploadRequest  <- client$uploadApp(appInfo, appFile, headers)
   message(paste("***: ", jsonlite::fromJSON(uploadRequest$content)$description, sep=""))
   
   invisible(uploadRequest)
   
 }
 
-zipAppDeploy <- function(appDir){
+lockAppDeploy <- function(appDir){
   
   oldWD <- getwd()
   on.exit(setwd(oldWD), add = TRUE)
@@ -115,8 +125,8 @@ zipAppDeploy <- function(appDir){
   #capture the state of a project's R package dependencies and create a lockfile, "renv.lock".
   #The lockfile can be used to later restore these project's dependencies as required.
   renv::settings$package.dependency.fields(c("Imports", "Depends", "LinkingTo", "Suggests"))
-  renv::snapshot(project = appDir, prompt = FALSE)
-
+  renv::snapshot(project = ".", prompt = FALSE)
+  
   # remove renv setting file
   if(dir.exists("renv")){
     unlink("renv", recursive=TRUE)
