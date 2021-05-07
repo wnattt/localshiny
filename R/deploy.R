@@ -44,9 +44,8 @@ deployDoc <- function(username,
   oldWD <- getwd()
   on.exit(setwd(oldWD), add = TRUE)
   setwd(dirname(document)) 
- 
-  #appdir <- tempdir()
-  appdir <- "test_deploy"
+  
+  appdir <- tempfile(pattern="localshiny")
   dir.create(appdir)
   on.exit(unlink(appdir, recursive=TRUE))
   file.copy(document, appdir) 
