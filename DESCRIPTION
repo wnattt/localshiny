@@ -5,7 +5,7 @@ Title: Deployment tool of distributing Shiny apps on LocalShiny web.
 Author: Nating Wang <nating.wang@yale.edu>
 Maintainer: Chenguang Wang <chenguang.wang.0517@gmail.com>
 Depends: R (>= 3.6.4)
-Imports: renv (=0.13.0-17), RCurl, jsonlite, zip
+Imports: renv (==0.13.0-17), RCurl, jsonlite, zip
 Description: R functions for distributing Shiny apps on LocalShiny web and installing Shiny apps on local computers.
 License: GPL (>= 2)
 
