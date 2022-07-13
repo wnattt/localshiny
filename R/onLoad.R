@@ -1,9 +1,10 @@
 .onLoad <- function(libname, pkgname) {
   
-  options(server = "www.findn.cn:5000")
-  options( protocol = "http")
+  options( protocol = "https")
+  options( server = "www.localshiny.org")
   options( path = "/api")
+  options( lockfile ="renv.lock")
+  options( renv.consent = TRUE)
+  options( runShiny = "runscript.R")
   
-  options(renv.consent = TRUE)
-  options(runShiny = "runscript.R")
 }

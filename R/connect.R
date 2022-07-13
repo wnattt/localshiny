@@ -16,7 +16,7 @@ connectClient <- function(service){
            headers = headers)
     },
 
-    uploadApp = function(appInfo, appZipFile, headers){   
+    uploadApp = function(appInfo, appZipFile, headers=list()){   
       POST( service, 
             "upload", 
             headers     = headers,
@@ -51,7 +51,7 @@ POST <- function(service,
                  content = NULL,
                  contentFile = NULL,
                  contentType = NULL) {
-               
+           
   # check if the request needs a body
   if (is.null(contentFile)) {
       # no file, don't include a body with the request
@@ -70,7 +70,7 @@ POST <- function(service,
   }
 }
 
-httpPost <- function(service,
+httpPost <- function(   service,
                         path,
                         headers     = list(),
                         content     = NULL,
@@ -132,7 +132,7 @@ GET <- function(service, path, appID){
   httpGet(service, 
           path,
           outFile)  
-
+  
 }
 
 httpGet <- function(service,

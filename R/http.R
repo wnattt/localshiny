@@ -13,15 +13,15 @@ httpGetRCurl <- function( protocol,
   
   # build url
   url <- paste(protocol, "://", host, port, urlPath, sep="")
-  if(!url.exists(url)){
-    stop("***: The appID you specified dose not exist! 
-               Fail to obtain the APP information or APP installation files")
-  }
-  
-  # download files
-  f = RCurl::CFILE(outFile, mode="wb")
-  RCurl::curlPerform(url=url, writedata = f@ref)
-  RCurl::close(f)   
+  #if(!url.exists(url)){
+  #  #eMsg <- paste(paste("URL '", url, "' does not exist \n"), "The appID you specified dose not exist! \n Fail to obtain the APP information or APP installation files \n")
+  #  eMsg <- paste("URL '", url, "' does not exist \n")
+  #  stop(eMsg)
+  #}
+
+  f <- httr::GET(url)
+  bin <- httr::content(f, "raw")
+  writeBin(bin, outFile)
   
   normalizePath(outFile)
 
@@ -51,43 +51,28 @@ httpPostRCurl <- function(protocol,
   # build url
   url <- paste(protocol, "://", host, port, urlPath, sep="")
   
-  # establish options
-  options        <- RCurl::curlOptions(url)
-
-  headerGatherer <- RCurl::basicHeaderGatherer()
-  textGatherer   <- RCurl::basicTextGatherer(.mapUnicode = FALSE)
-  options$headerfunction <- headerGatherer$update  
-  options$writefunction  <- textGatherer$update  
-  
   # make the request
   time <- system.time(gcFirst = FALSE, tryCatch({
     if (!is.null(contentFile)) {
       # upload .zip file
-      headers$'Content-Type' <- contentType
-      options$httpheader     <- headers
-      RCurl::postForm(url,
-         .opts  = options,
-         "file" = fileUpload(filename = contentFile),
-         "info" = content)
-
+      resp <- httr::POST(url, add_headers(.headers = c('Content-Type'=contentType)), 
+                              body=list('info'=content, 'file'=httr::upload_file(contentFile)))
+   
     } else{
-        # log in or log out
-        options$customrequest  <- "POST"
-        RCurl::curlPerform(url=url, 
-                          .opts = options, 
-                          httpheader=unlist(headers))
-      }
+      # log in or log out
+      resp <- httr::POST(url, httr::add_headers(.headers = unlist(headers)))
+    }
   },
     error = function(e, ...) {
         stop(e)
     }))
   
   # get list of HTTP response headers 
-  responHeaders  <- headerGatherer$value()
-
+  responHeaders  <- httr::headers(resp)
+  
   # get HTTP response bodies
-  responBodies  <- textGatherer$value()
-
+  responBodies  <- httr::content(resp)
+  
   # read HTTP response
   req = list(protocol  = protocol,
               host     = host,
@@ -99,12 +84,12 @@ httpPostRCurl <- function(protocol,
 }
 
 readHttpResponse <- function(req, headers, bodies) {
-
+  
   names(headers) <- tolower(names(headers))
   status      <- parseHttpStatus(headers)
   contentType <- parseHttpContentType(headers)
   sessionCode <- parseHttpSession(headers)
-
+  
   list( req     = req,
         status  = status,
         session = sessionCode,
@@ -141,11 +126,12 @@ parseHttpSession <- function(headers){
   
   # Parse cookies from header; 
   ######bear in mind that there may be multiple headers
+  
   cookieHeaders <- headers[names(headers) == "set-cookie"]
   
   # extract session code in the set-cookies
-  splitCookies <- strsplit(cookieHeaders,";")
-  session      <- splitCookies$`set-cookie`[1]
+  splitCookies <- strsplit(cookieHeaders$`set-cookie`,";")
+  session      <- splitCookies[[1]][1]
   
   if (is.null(session))
     return(-1)

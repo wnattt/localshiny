@@ -12,7 +12,7 @@ deleteApp <- function(username, appname) {
   # get the path to the config file
   configDir   <- authConfigDir(username)
   configFile  <- file.path(configDir , "config.dcf")
-
+  
   # read login information for username
   if(!file.exists(configFile)){
     stop("Unable to determine the login information for the account named '", username, "'!
